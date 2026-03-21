@@ -11,6 +11,7 @@ import {
 } from 'chart.js';
 import BlackjackGame from './BlackjackGame';
 import LightningRoulette from './LightningRoulette';
+import SpeedBaccarat from './SpeedBaccarat';
 
 ChartJS.register(
   CategoryScale,
@@ -26,8 +27,14 @@ function Casino() {
   const [jackpot, setJackpot] = useState(2847293.45);
   const [showBlackjack, setShowBlackjack] = useState(false);
   const [showLightningRoulette, setShowLightningRoulette] = useState(false);
+  const [showSpeedBaccarat, setShowSpeedBaccarat] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
   const chartRef = useRef(null);
+
+  // If showing Speed Baccarat
+  if (showSpeedBaccarat) {
+    return <SpeedBaccarat onBack={() => setShowSpeedBaccarat(false)} />;
+  }
 
   // If showing Lightning Roulette
   if (showLightningRoulette) {
@@ -405,6 +412,7 @@ function Casino() {
               onClick={() => {
                 if (table.name === 'Blackjack Classic') setShowBlackjack(true);
                 if (table.name === 'Lightning Roulette') setShowLightningRoulette(true);
+                if (table.name === 'Speed Baccarat') setShowSpeedBaccarat(true);
               }}
               className={`game-card bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden cursor-pointer ${table.isHot ? 'hot-game' : ''} ${table.isNew ? 'new-game' : ''}`}
             >
