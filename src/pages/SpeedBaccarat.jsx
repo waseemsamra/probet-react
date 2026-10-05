@@ -397,10 +397,10 @@ function SpeedBaccarat({ onBack }) {
   const timerPercent = (timeRemaining / 27) * 100;
 
   return (
-    <div className="p-8 h-screen overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-slate-50 overflow-hidden">
       {/* Header */}
-      <header className="glass-panel border-b border-slate-200 px-8 py-4 mb-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <header className="glass-panel border-b border-slate-200 px-8 py-4 absolute top-0 left-0 right-0 z-50">
+        <div className="flex items-center justify-between max-w-[1920px] mx-auto">
           <div className="flex items-center gap-4">
             <button
               onClick={onBack}
@@ -446,7 +446,8 @@ function SpeedBaccarat({ onBack }) {
       </header>
 
       {/* Main Game Area */}
-      <div className="max-w-7xl mx-auto grid grid-cols-12 gap-4 h-[calc(100vh-140px)]">
+      <div className="absolute inset-0 top-[88px] p-4">
+        <div className="max-w-[1920px] mx-auto grid grid-cols-12 gap-4 h-full">
         {/* Left Panel: Road Map & Stats */}
         <div className="col-span-3 flex flex-col gap-4">
           {/* Road Map */}
@@ -845,6 +846,7 @@ function SpeedBaccarat({ onBack }) {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
