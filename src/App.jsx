@@ -1,5 +1,8 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Login from './components/Auth/Login';
+import AuthCallback from './routes/AuthCallback';
 
 // Import all page components
 import Dashboard from './pages/Dashboard';
@@ -14,6 +17,7 @@ import Reports from './pages/Reports';
 // Sidebar Component
 function Sidebar() {
   const location = useLocation();
+  const { profile, signOut } = useAuth();
   const [horseRacingOpen, setHorseRacingOpen] = useState(false);
   
   const isActive = (path) => location.pathname === path;
@@ -100,12 +104,22 @@ function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-slate-200">
-        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-          <img src="https://i.pravatar.cc/150?img=11" alt="Admin" className="w-10 h-10 rounded-full border-2 border-white shadow-sm" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-800 truncate">Alex Morgan</p>
-            <p className="text-xs text-slate-500 truncate">Super Admin</p>
+        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+          <div className="flex items-center gap-3">
+            <img src={profile?.avatar_url || 'https://i.pravatar.cc/150?img=11'} alt="Admin" className="w-10 h-10 rounded-full border-2 border-white shadow-sm" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-slate-800 truncate">{profile?.full_name || profile?.username || 'Alex Morgan'}</p>
+              <p className="text-xs text-slate-500 truncate capitalize">{profile?.role || 'Super Admin'}</p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => signOut()}
+            className="text-xs px-2 py-1 rounded text-slate-600 hover:bg-slate-200"
+            title="Sign out"
+          >
+            Sign out
+          </button>
         </div>
       </div>
     </aside>
@@ -133,10 +147,30 @@ function MainLayout() {
   );
 }
 
+// Guards the dashboard behind a valid session.
+function ProtectedLayout() {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-600">
+        Loading…
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  return <MainLayout />;
+}
+
 function App() {
   return (
     <BrowserRouter>
-      <MainLayout />
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/*" element={<ProtectedLayout />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
