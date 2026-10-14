@@ -11,6 +11,7 @@ import Analytics from './pages/Analytics';
 import AllSports from './pages/AllSports';
 import HorseRacing from './pages/HorseRacing';
 import Football from './pages/Football';
+import Cricket from './pages/Cricket';
 import Users from './pages/Users';
 import Reports from './pages/Reports';
 
@@ -79,10 +80,16 @@ function Sidebar() {
             Football
           </Link>
 
-          <Link to="/all-sports" className={navLinkClass('/all-sports')}>
-            <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            All Sports
-          </Link>
+           <Link to="/cricket" className={navLinkClass('/cricket')}>
+             <div className="w-5 h-5 flex items-center justify-center text-teal-500">
+               🏏
+             </div>
+             Cricket
+           </Link>
+           <Link to="/all-sports" className={navLinkClass('/all-sports')}>
+             <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 002-2v12a2 2 0 002 2z"></path></svg>
+             All Sports
+           </Link>
 
           <Link to="/casino" className={navLinkClass('/casino')}>
             <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
@@ -137,8 +144,9 @@ function MainLayout() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/all-sports" element={<AllSports />} />
           <Route path="/horse-racing" element={<HorseRacing />} />
-          <Route path="/football" element={<Football />} />
-          <Route path="/casino" element={<Casino />} />
+           <Route path="/football" element={<Football />} />
+           <Route path="/cricket" element={<Cricket />} />
+           <Route path="/casino" element={<Casino />} />
           <Route path="/users" element={<Users />} />
           <Route path="/reports" element={<Reports />} />
         </Routes>
