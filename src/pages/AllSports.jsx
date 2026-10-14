@@ -28,8 +28,13 @@ ChartJS.register(
 function AllSports() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeFilter, setActiveFilter] = useState('all');
+  const [selectedSport, setSelectedSport] = useState(null);
   const volumeChartRef = useRef(null);
   const activityChartRef = useRef(null);
+
+  const handleSportSelect = (sport) => {
+    setSelectedSport(selectedSport === sport ? null : sport);
+  };
 
   // Clock
   useEffect(() => {
@@ -272,6 +277,13 @@ function AllSports() {
     return colors[color] || colors.blue;
   };
 
+  const filteredLiveEvents = selectedSport
+    ? liveEvents.filter((event) => event.sport === selectedSport)
+    : liveEvents;
+  const filteredHighlights = selectedSport
+    ? highlights.filter((highlight) => highlight.sport === selectedSport)
+    : highlights;
+
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
@@ -350,10 +362,11 @@ function AllSports() {
       {/* Sports Categories Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         {sports.map((sport, index) => (
-          <div
-            key={index}
-            className={`sport-card ${sport.gradient} rounded-2xl p-5 border border-${sport.color}-200 cursor-pointer hover:shadow-lg transition-all`}
-          >
+             <div
+               key={index}
+               onClick={() => handleSportSelect(sport.name)}
+               className={`sport-card ${sport.gradient} rounded-2xl p-5 border border-${sport.color}-200 cursor-pointer hover:shadow-lg transition-all ${selectedSport === sport.name ? 'ring-2 ring-' + sport.color + '-500' : ''}`}
+             >
             <div className="flex items-center justify-between mb-3">
               <div className="sport-icon-wrap w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-sm bg-white">
                 {sport.icon}
@@ -410,7 +423,7 @@ function AllSports() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {liveEvents.map((event, index) => (
+               {filteredLiveEvents.map((event, index) => (
                 <tr key={index} className="event-row hover:bg-slate-50 transition-all">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
@@ -469,7 +482,7 @@ function AllSports() {
             <button className="text-sm text-rose-600 hover:text-rose-700 font-medium">Full Schedule</button>
           </div>
           <div className="space-y-4">
-            {highlights.map((highlight, index) => (
+             {filteredHighlights.map((highlight, index) => (
               <div
                 key={index}
                 className={`flex items-center gap-4 p-4 bg-gradient-to-r rounded-xl border transition-all hover:shadow-md ${getHighlightColor(highlight.color)}`}
