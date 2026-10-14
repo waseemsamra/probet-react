@@ -300,6 +300,8 @@ function Football() {
       </header>
 
       {/* Quick Stats */}
+      {/* Quick Stats */}
+      <div className="overflow-x-auto flex flex-nowrap gap-6 px-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm card-hover">
           <div className="flex justify-between items-start mb-4">
@@ -387,6 +389,7 @@ function Football() {
             <span className="text-slate-400">Market average: 2.38</span>
           </div>
         </div>
+      </div>
       </div>
 
       {/* League Filter */}

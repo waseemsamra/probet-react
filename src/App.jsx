@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/Auth/Login';
@@ -16,20 +16,22 @@ import Users from './pages/Users';
 import Reports from './pages/Reports';
 
 // Sidebar Component
-function Sidebar() {
+function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
   const location = useLocation();
   const { profile, signOut } = useAuth();
   const [horseRacingOpen, setHorseRacingOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // For mobile sidebar
-  
+
   const isActive = (path) => location.pathname === path;
-  
+
   const navLinkClass = (path) => `flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors ${
     isActive(path) ? 'bg-slate-50 text-slate-800' : 'text-slate-600 hover:bg-slate-50'
   }`;
 
+  // Detect mobile width
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
   return (
-    <aside className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-slate-200 flex flex-col z-20 flex-shrink-0 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+    <aside className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-slate-200 flex flex-col z-20 flex-shrink-0 transition-transform duration-300 ease-in-out ${isMobile && !isSidebarOpen ? '-translate-x-full' : 'translate-x-0'}`}>
       <div className="flex items-center justify-between p-6 border-b border-slate-100">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">P</div>
@@ -42,16 +44,16 @@ function Sidebar() {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
-      
+
       <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
         <div className="mb-6">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-3">Main</p>
           <Link to="/" className={navLinkClass('/')}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2 2v-2z"></path></svg>
             Dashboard
           </Link>
           <Link to="/analytics" className={navLinkClass('/analytics')}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002 2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 002 2h2a2 2 0 002 2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2 2z"></path></svg>
             Analytics
           </Link>
         </div>
@@ -97,7 +99,7 @@ function Sidebar() {
           </Link>
 
           <Link to="/casino" className={navLinkClass('/casino')}>
-            <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012-2v2M7 7h10"></path></svg>
             Casino
           </Link>
         </div>
@@ -141,12 +143,12 @@ function Sidebar() {
 // Main Layout Component
 function MainLayout() {
   const location = useLocation();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Start open on desktop
   
   // Close sidebar when navigating on mobile
   useEffect(() => {
     // Check if we're on mobile (screen width < 768px)
-    if (window.innerWidth < 768) {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
       setIsSidebarOpen(false);
     }
   }, [location.pathname]);
@@ -161,13 +163,13 @@ function MainLayout() {
       </div>
       
       {/* Sidebar Overlay for Mobile */}
-      {window.innerWidth < 768 && isSidebarOpen && (
+      {typeof window !== 'undefined' && window.innerWidth < 768 && isSidebarOpen && (
         <div className="fixed inset-0 z-20 bg-black bg-opacity-50" onClick={() => setIsSidebarOpen(false)} />
       )}
       
       <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       
-      <main className={`flex-1 overflow-auto bg-slate-50 ${window.innerWidth < 768 && isSidebarOpen ? 'translate-x-[256px]' : 'translate-x-0'} transition-transform duration-300`}>
+      <main className={`flex-1 overflow-auto bg-slate-50 ${typeof window !== 'undefined' && window.innerWidth < 768 && isSidebarOpen ? 'translate-x-[256px]' : 'translate-x-0'} transition-transform duration-300`}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/analytics" element={<Analytics />} />

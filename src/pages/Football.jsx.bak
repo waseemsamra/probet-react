@@ -451,7 +451,7 @@ function Football() {
         </div>
 
         {/* Live Match Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="overflow-x-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
           {liveMatches.map((match) => (
             <div key={match.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden match-card hover:shadow-lg transition-all">
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 flex items-center justify-between text-white">
@@ -633,7 +633,7 @@ function Football() {
       </div>
 
       {/* Top Leagues Performance */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="overflow-x-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
           <h4 className="font-bold text-slate-800 mb-4">League Performance</h4>
           <div className="space-y-4">
@@ -659,7 +659,7 @@ function Football() {
             <h4 className="font-bold text-slate-800">Popular Markets</h4>
             <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">View All</button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="overflow-x-auto grid grid-cols-2 md:grid-cols-4 gap-4">
             {popularMarkets.map((market, index) => (
               <div
                 key={index}

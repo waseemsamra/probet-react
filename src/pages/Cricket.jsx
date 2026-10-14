@@ -351,8 +351,8 @@ function Cricket() {
       </header>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm card-hover">
+      <div className="overflow-x-auto flex flex-nowrap gap-6 px-4">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm card-hover flex-shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-sm font-medium text-slate-500 mb-1">Live Matches</p>
@@ -374,8 +374,7 @@ function Cricket() {
             <span className="text-slate-400">from yesterday</span>
           </div>
         </div>
-
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm card-hover">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm card-hover flex-shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-sm font-medium text-slate-500 mb-1">Total Volume</p>
@@ -397,8 +396,7 @@ function Cricket() {
             <span className="text-slate-400">today</span>
           </div>
         </div>
-
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm card-hover">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm card-hover flex-shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-sm font-medium text-slate-500 mb-1">Active Bets</p>
@@ -420,8 +418,7 @@ function Cricket() {
             <span className="text-slate-400">this hour</span>
           </div>
         </div>
-
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm card-hover">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm card-hover flex-shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-sm font-medium text-slate-500 mb-1">Avg Odds</p>
