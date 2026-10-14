@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Doughnut, Line } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -18,7 +17,6 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
-  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -27,14 +25,14 @@ ChartJS.register(
 
 function Cricket() {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [activeFilter, setActiveFilter] = useState('all');
-   const [selectedSport, setSelectedSport] = useState('cricket');
-  const volumeChartRef = useRef(null);
-  const activityChartRef = useRef(null);
-
-  const handleSportSelect = (sport) => {
-    setSelectedSport(selectedSport === sport ? null : sport);
-  };
+  const [match1Time, setMatch1Time] = useState(45 * 60 + 30); // 45:30
+  const [match2Time, setMatch2Time] = useState(22 * 60 + 15); // 22:15
+  const [score1, setScore1] = useState({ home: 145, away: 128 }); // Runs
+  const [score2, setScore2] = useState({ home: 87, away: 92 }); // Runs
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [activeLeague, setActiveLeague] = useState('all');
+  const [activeMarket, setActiveMarket] = useState('Match Winner');
+  const chartRef = useRef(null);
 
   // Clock
   useEffect(() => {
@@ -42,173 +40,56 @@ function Cricket() {
     return () => clearInterval(timer);
   }, []);
 
-  // Sports data
-  const sports = [
-    { name: 'Football', icon: '⚽', live: 48, events: 892, leagues: 'Premier, La Liga, UCL', color: 'blue', gradient: 'sport-gradient-football' },
-    { name: 'Basketball', icon: '🏀', live: 24, events: 156, leagues: 'NBA, EuroLeague', color: 'orange', gradient: 'sport-gradient-basketball' },
-    { name: 'Tennis', icon: '🎾', live: 18, events: 89, leagues: 'ATP, WTA, Grand Slam', color: 'green', gradient: 'sport-gradient-tennis' },
-    { name: 'Cricket', icon: '🏏', live: 8, events: 34, leagues: 'IPL, Test, T20', color: 'teal', gradient: 'sport-gradient-cricket' },
-    { name: 'Ice Hockey', icon: '🏒', live: 12, events: 56, leagues: 'NHL, KHL', color: 'cyan', gradient: 'sport-gradient-hockey' },
-    { name: 'Baseball', icon: '⚾', live: 6, events: 42, leagues: 'MLB, NPB', color: 'indigo', gradient: 'sport-gradient-baseball' },
-    { name: 'Rugby', icon: '🏉', live: 4, events: 28, leagues: 'Union, League', color: 'lime', gradient: 'sport-gradient-rugby' },
-    { name: 'Golf', icon: '⛳', live: 3, events: 15, leagues: 'PGA, European', color: 'emerald', gradient: 'sport-gradient-golf' },
-    { name: 'Esports', icon: '🎮', live: 32, events: 124, leagues: 'CS:GO, LoL, Dota 2', color: 'violet', gradient: 'sport-gradient-esports' },
-    { name: 'MMA', icon: '🥊', live: 2, events: 12, leagues: 'UFC, Bellator', color: 'red', gradient: 'sport-gradient-mma' },
-    { name: 'Boxing', icon: '🥊', live: 1, events: 8, leagues: 'Heavyweight, Title', color: 'amber', gradient: 'sport-gradient-boxing' },
-    { name: 'Motorsport', icon: '🏎️', live: 0, events: 6, leagues: 'F1, MotoGP, NASCAR', color: 'slate', gradient: 'sport-gradient-motorsport' },
-  ];
+  // Match timers
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (autoRefresh) {
+        setMatch1Time((prev) => prev + 1);
+        setMatch2Time((prev) => prev + 1);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [autoRefresh]);
 
-  // Live events data
-  const liveEvents = [
-    {
-      sport: 'Football',
-      icon: '⚽',
-      event: 'Man United vs Liverpool',
-      league: 'Premier League',
-      status: "LIVE 67'",
-      score: '2 - 1',
-      odds1: 3.20,
-      oddsX: 4.50,
-      odds2: 1.95,
-      volume: '$450K',
-      volumeLabel: 'High volume',
-    },
-    {
-      sport: 'Basketball',
-      icon: '🏀',
-      event: 'Lakers vs Warriors',
-      league: 'NBA',
-      status: 'LIVE Q3',
-      score: '78 - 82',
-      odds1: 2.10,
-      oddsX: '-',
-      odds2: 1.75,
-      volume: '$380K',
-      volumeLabel: 'Active',
-    },
-    {
-      sport: 'Tennis',
-      icon: '🎾',
-      event: 'Alcaraz vs Djokovic',
-      league: 'Wimbledon • Final',
-      status: 'LIVE Set 3',
-      score: '1 - 1',
-      odds1: 1.85,
-      oddsX: '-',
-      odds2: 2.00,
-      volume: '$290K',
-      volumeLabel: 'Trending',
-    },
-    {
-      sport: 'Cricket',
-      icon: '🏏',
-      event: 'India vs Australia',
-      league: 'Test Match • Day 3',
-      status: 'LIVE 45.2',
-      score: '312/4',
-      odds1: 1.65,
-      oddsX: 3.20,
-      odds2: 5.50,
-      volume: '$180K',
-      volumeLabel: 'Steady',
-    },
-    {
-      sport: 'Esports',
-      icon: '🎮',
-      event: 'NAVI vs FaZe',
-      league: 'CS:GO • IEM Cologne',
-      status: 'LIVE Map 2',
-      score: '1 - 0',
-      odds1: 1.45,
-      oddsX: '-',
-      odds2: 2.80,
-      volume: '$220K',
-      volumeLabel: 'Hot',
-    },
-  ];
-
-  // Upcoming highlights
-  const highlights = [
-    {
-      sport: 'Football',
-      icon: '⚽',
-      flag: '🇪🇸',
-      event: 'Real Madrid vs Barcelona',
-      league: "La Liga • El Clásico • Today 20:00",
-      volume: '$2.1M volume',
-      interest: '+450% interest',
-      color: 'blue',
-    },
-    {
-      sport: 'Basketball',
-      icon: '🏀',
-      flag: '🇺🇸',
-      event: 'Celtics vs Heat',
-      league: 'NBA Playoffs • Game 7 • Tomorrow 01:30',
-      volume: '$1.8M volume',
-      interest: '+320% interest',
-      color: 'orange',
-    },
-    {
-      sport: 'Tennis',
-      icon: '🎾',
-      flag: '🇬🇧',
-      event: 'Wimbledon Final',
-      league: "Men's Singles • Sunday 14:00",
-      volume: '$950K volume',
-      interest: 'Awaiting finalists',
-      color: 'green',
-    },
-  ];
-
-  // Volume chart data
-  const volumeChartData = {
-    labels: ['Football', 'Esports', 'Basketball', 'Tennis', 'Others'],
-    datasets: [
-      {
-        data: [42, 18, 15, 12, 13],
-        backgroundColor: ['#3b82f6', '#8b5cf6', '#f97316', '#22c55e', '#94a3b8'],
-        borderWidth: 0,
-        hoverOffset: 4,
-      },
-    ],
+  // Format time
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const volumeChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '70%',
-    plugins: {
-      legend: {
-        display: false,
-      },
-    },
-  };
-
-  // Activity chart data
-  const activityChartData = {
+  // Chart data
+  const chartData = {
     labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59'],
     datasets: [
       {
-        label: 'In-Play',
-        data: [120, 80, 200, 350, 480, 620, 450],
-        borderColor: '#f43f5e',
-        backgroundColor: 'rgba(244, 63, 94, 0.1)',
+        label: 'IPL',
+        data: [25, 18, 22, 45, 68, 95, 72],
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
         tension: 0.4,
         fill: true,
       },
       {
-        label: 'Pre-match',
-        data: [200, 150, 300, 400, 350, 280, 220],
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        label: 'International',
+        data: [35, 28, 32, 55, 78, 110, 85],
+        borderColor: '#ef4444',
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: 'T20 Leagues',
+        data: [20, 15, 18, 35, 52, 78, 60],
+        borderColor: '#f59e0b',
+        backgroundColor: 'rgba(245, 158, 11, 0.1)',
         tension: 0.4,
         fill: true,
       },
     ],
   };
 
-  const activityChartOptions = {
+  const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -250,39 +131,126 @@ function Cricket() {
     },
   };
 
-  const getSportColor = (color) => {
-    const colors = {
-      blue: 'text-blue-600 bg-blue-100',
-      orange: 'text-orange-600 bg-orange-100',
-      green: 'text-green-600 bg-green-100',
-      teal: 'text-teal-600 bg-teal-100',
-      cyan: 'text-cyan-600 bg-cyan-100',
-      indigo: 'text-indigo-600 bg-indigo-100',
-      lime: 'text-lime-600 bg-lime-100',
-      emerald: 'text-emerald-600 bg-emerald-100',
-      violet: 'text-violet-600 bg-violet-100',
-      red: 'text-red-600 bg-red-100',
-      amber: 'text-amber-600 bg-amber-100',
-      slate: 'text-slate-600 bg-slate-100',
-    };
-    return colors[color] || colors.blue;
-  };
+  const leagues = [
+    { id: 'all', name: 'All Leagues', icon: '' },
+    { id: 'ipl', name: 'IPL', icon: '🏆' },
+    { id: 'intl', name: 'International', icon: '🌍' },
+    { id: 'bbll', name: 'Big Bash', icon: '🎪' },
+    { id: 'cpl', name: 'Caribbean Premier', icon: '🏝️' },
+    { id: 't20w', name: 'T20 World Cup', icon: '🏆' },
+  ];
 
-  const getHighlightColor = (color) => {
-    const colors = {
-      blue: 'from-blue-50 to-indigo-50 border-blue-200',
-      orange: 'from-orange-50 to-amber-50 border-orange-200',
-      green: 'from-green-50 to-emerald-50 border-green-200',
-    };
-    return colors[color] || colors.blue;
-  };
+  const markets = ['Match Winner', 'Top Batsman', 'Top Bowler', 'Total Runs', 'Over/Under', 'Method of Dismissal'];
 
-  const filteredLiveEvents = selectedSport
-    ? liveEvents.filter((event) => event.sport === selectedSport)
-    : liveEvents;
-  const filteredHighlights = selectedSport
-    ? highlights.filter((highlight) => highlight.sport === selectedSport)
-    : highlights;
+  const liveMatches = [
+    {
+      id: 1,
+      league: 'IPL',
+      timer: formatTime(match1Time),
+      homeTeam: 'Mumbai Indians',
+      awayTeam: 'Chennai Super Kings',
+      homeIcon: '💙',
+      awayIcon: '💛',
+      score: score1,
+      period: '2nd Innings',
+      stats: { overs: '18.4/20', runRate: '8.9', wickets: '3/10' },
+      odds: { home: 1.85, draw: 0, away: 2.00 }, // No draw in cricket limited overs
+      oddsChange: { home: 'up', draw: null, away: 'down' },
+    },
+    {
+      id: 2,
+      league: 'International',
+      timer: formatTime(match2Time),
+      homeTeam: 'Australia',
+      awayTeam: 'England',
+      homeIcon: '🦘',
+      awayIcon: '🦁',
+      score: score2,
+      period: '45th Over',
+      stats: { overs: '45/50', runRate: '5.8', wickets: '6/10' },
+      odds: { home: 2.10, draw: 0, away: 1.75 },
+      oddsChange: { home: 'down', draw: null, away: 'up' },
+    },
+  ];
+
+  const upcomingMatches = [
+    {
+      time: '14:00',
+      date: 'Today',
+      league: 'IPL',
+      leagueColor: 'emerald',
+      home: 'RCB',
+      away: 'KKR',
+      homeColor: 'bg-red-600',
+      awayColor: 'bg-purple-600',
+      competition: 'Indian Premier League • Eliminator',
+      odds: { home: 1.95, draw: 0, away: 1.90 },
+      volume: '$280K',
+      interest: 'High interest',
+    },
+    {
+      time: '15:30',
+      date: 'Today',
+      league: 'Intl',
+      leagueColor: 'red',
+      home: 'IND',
+      away: 'PAK',
+      homeColor: 'bg-orange-500',
+      awayColor: 'bg-green-600',
+      competition: 'Asia Cup • Super Four',
+      odds: { home: 1.80, draw: 0, away: 2.10 },
+      volume: '$420K',
+      interest: 'Hot fixture',
+    },
+    {
+      time: '19:45',
+      date: 'Today',
+      league: 'BBL',
+      leagueColor: 'orange',
+      home: 'PER',
+      away: 'SYD',
+      homeColor: 'bg-purple-600',
+      awayColor: 'bg-yellow-500',
+      competition: 'Big Bash League • Semi Final',
+      odds: { home: 2.20, draw: 0, away: 1.70 },
+      volume: '$190K',
+      interest: 'Normal',
+    },
+    {
+      time: '10:00',
+      date: 'Tomorrow',
+      league: 'CPL',
+      leagueColor: 'yellow',
+      home: 'JAM',
+      away: 'TT',
+      homeColor: 'bg-yellow-500',
+      awayColor: 'bg-red-600',
+      competition: 'Caribbean Premier League • Final',
+      odds: { home: 1.75, draw: 0, away: 2.15 },
+      volume: '$150K',
+      interest: 'Trending',
+    },
+  ];
+
+  const leaguePerformance = [
+    { name: 'IPL', change: '+18.5%', volume: '$380K', width: '80%', color: 'bg-emerald-500' },
+    { name: 'International', change: '+12.3%', volume: '$320K', width: '75%', color: 'bg-red-500' },
+    { name: 'T20 Leagues', change: '+24.1%', volume: '$290K', width: '70%', color: 'bg-yellow-500' },
+    { name: 'Big Bash', change: '-3.2%', volume: '$180K', width: '50%', color: 'bg-orange-500' },
+  ];
+
+  const popularMarkets = [
+    { icon: '🏆', name: 'Match Winner', percentage: '52% of bets' },
+    { icon: '⚾', name: 'Top Batsman', percentage: '28% of bets' },
+    { icon: '🎯', name: 'Top Bowler', percentage: '22% of bets' },
+    { icon: '📊', name: 'Total Runs', percentage: '18% of bets' },
+  ];
+
+  const getOddsChangeIcon = (change) => {
+    if (change === 'up') return { symbol: '▲', color: 'text-emerald-600' };
+    if (change === 'down') return { symbol: '▼', color: 'text-red-500' };
+    return null;
+  };
 
   return (
     <div className="p-8 space-y-6">
@@ -291,19 +259,19 @@ function Cricket() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-rose-200">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+              <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                <div className="w-6 h-6 flex items-center justify-center">
+                  🏏
+                </div>
               </div>
               <div>
-                 <h2 className="text-2xl font-bold text-slate-800">Cricket</h2>
-                <p className="text-sm text-slate-500">Complete sports betting overview</p>
+                <h2 className="text-2xl font-bold text-slate-800">Cricket</h2>
+                <p className="text-sm text-slate-500">Live matches & upcoming fixtures</p>
               </div>
             </div>
-            <span className="px-3 py-1 bg-rose-100 text-rose-700 text-xs font-bold rounded-full flex items-center gap-1">
-              <span className="w-2 h-2 bg-rose-500 rounded-full live-indicator"></span>
-              156 LIVE EVENTS
+            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full flex items-center gap-1">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full live-indicator"></span>
+              12 LIVE MATCHES
             </span>
           </div>
 
@@ -313,7 +281,7 @@ function Cricket() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span className="font-mono font-medium">
-                {currentTime.toLocaleTimeString('en-GB')} UTC
+                {currentTime.toISOString().split('T')[1].split('.')[0]} UTC
               </span>
             </div>
 
@@ -329,202 +297,391 @@ function Cricket() {
         </div>
       </header>
 
-
-
-      {/* Sports Categories Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-        {sports.map((sport, index) => (
-             <div
-               key={index}
-               onClick={() => handleSportSelect(sport.name)}
-               className={`sport-card ${sport.gradient} rounded-2xl p-5 border border-${sport.color}-200 cursor-pointer hover:shadow-lg transition-all ${selectedSport === sport.name ? 'ring-2 ring-' + sport.color + '-500' : ''}`}
-             >
-            <div className="flex items-center justify-between mb-3">
-              <div className="sport-icon-wrap w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-sm bg-white">
-                {sport.icon}
-              </div>
-              <span className={`text-xs font-bold px-2 py-1 rounded-full ${getSportColor(sport.color)}`}>
-                {sport.live} LIVE
-              </span>
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm card-hover">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-sm font-medium text-slate-500 mb-1">Live Matches</p>
+              <h3 className="text-3xl font-bold text-slate-800">12</h3>
             </div>
-            <h4 className="font-bold text-slate-800 mb-1">{sport.name}</h4>
-            <p className="text-xs text-slate-500 mb-3">{sport.leagues}</p>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600 font-medium">{sport.events} events</span>
-              <svg className={`w-4 h-4 text-${sport.color}-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+            <div className="p-2 bg-emerald-100 rounded-lg">
+              <div className="w-6 h-6 flex items-center justify-center">
+                🏏
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-emerald-600 font-semibold flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              +2
+            </span>
+            <span className="text-slate-400">from yesterday</span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm card-hover">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-sm font-medium text-slate-500 mb-1">Total Volume</p>
+              <h3 className="text-3xl font-bold text-slate-800">$850K</h3>
+            </div>
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599 1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-emerald-600 font-semibold flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              +6.8%
+            </span>
+            <span className="text-slate-400">today</span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm card-hover">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-sm font-medium text-slate-500 mb-1">Active Bets</p>
+              <h3 className="text-3xl font-bold text-slate-800">5,240</h3>
+            </div>
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 002-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-emerald-600 font-semibold flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              +15%
+            </span>
+            <span className="text-slate-400">this hour</span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm card-hover">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-sm font-medium text-slate-500 mb-1">Avg Odds</p>
+              <h3 className="text-3xl font-bold text-slate-800">2.15</h3>
+            </div>
+            <div className="p-2 bg-amber-100 rounded-lg">
+              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-400">Market average: 2.08</span>
+          </div>
+        </div>
+      </div>
+
+      {/* League Filter */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+        <div className="flex items-center gap-3 overflow-x-auto scroll-hide pb-2">
+          {leagues.map((league) => (
+            <button
+              key={league.id}
+              onClick={() => setActiveLeague(league.id)}
+              className={`px-6 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${
+                activeLeague === league.id
+                  ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg'
+                  : 'text-slate-600 bg-slate-100 hover:bg-slate-200'
+              }`}
+            >
+              {league.icon && <span className="mr-2">{league.icon}</span>}
+              {league.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Market Type Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto scroll-hide">
+        {markets.map((market) => (
+          <button
+            key={market}
+            onClick={() => setActiveMarket(market)}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
+              activeMarket === market
+                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {market}
+          </button>
         ))}
       </div>
 
-      {/* Live Events Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-              Live Events
-            </h3>
-            <p className="text-sm text-slate-500">Real-time matches across all sports</p>
-          </div>
+      {/* Live Matches Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            Live Matches
+          </h3>
           <div className="flex items-center gap-2">
-            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-            <button className="px-4 py-2 bg-rose-100 text-rose-700 font-semibold rounded-lg text-sm hover:bg-rose-200 transition-colors">
-              View All Live
+            <span className="text-sm text-slate-500">Auto-refresh:</span>
+            <button
+              onClick={() => setAutoRefresh(!autoRefresh)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                autoRefresh ? 'bg-emerald-600' : 'bg-slate-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  autoRefresh ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
             </button>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Sport</th>
-                <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Event</th>
-                <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Status</th>
-                <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Score</th>
-                <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">1</th>
-                <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">X</th>
-                <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">2</th>
-                <th className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Volume</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-               {filteredLiveEvents.map((event, index) => (
-                <tr key={index} className="event-row hover:bg-slate-50 transition-all">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{event.icon}</span>
-                      <span className="text-sm font-medium text-slate-700">{event.sport}</span>
+
+        {/* Live Match Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {liveMatches.map((match) => (
+            <div key={match.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden match-card hover:shadow-lg transition-all">
+              <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-3 flex items-center justify-between text-white">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold bg-white/20 px-2 py-1 rounded">LIVE</span>
+                  <span className="text-sm font-medium">{match.league}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm font-mono">{match.timer}</div>
+              </div>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex-1 text-center">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2 text-2xl">
+                      {match.homeIcon}
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-slate-800">{event.event}</div>
-                    <div className="text-xs text-slate-500">{event.league}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="match-live text-sm font-bold text-red-600 pl-3">{event.status}</span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-lg font-bold text-slate-800">{event.score}</span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <button className="odds-btn px-4 py-2 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-lg font-bold text-slate-800 hover:text-blue-700 transition-all">
-                      {event.odds1}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    {event.oddsX === '-' ? (
-                      <span className="text-slate-400">-</span>
-                    ) : (
-                      <button className="odds-btn px-4 py-2 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-lg font-bold text-slate-800 hover:text-blue-700 transition-all">
-                        {event.oddsX}
+                    <h4 className="font-bold text-slate-800">{match.homeTeam}</h4>
+                    <p className="text-sm text-slate-500">Home</p>
+                  </div>
+                  <div className="px-8">
+                    <div className="text-4xl font-bold text-slate-800 mb-1">
+                      {match.score.home} - {match.score.away}
+                    </div>
+                    <div className="text-xs text-slate-400 font-medium">{match.period}</div>
+                  </div>
+                  <div className="flex-1 text-center">
+                    <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-2 text-2xl">
+                      {match.awayIcon}
+                    </div>
+                    <h4 className="font-bold text-slate-800">{match.awayTeam}</h4>
+                    <p className="text-sm text-slate-500">Away</p>
+                  </div>
+                </div>
+
+                {/* Match Stats */}
+                <div className="grid grid-cols-3 gap-4 mb-6 text-center text-sm">
+                  <div className="bg-slate-50 rounded-lg p-2">
+                    <div className="text-slate-500 mb-1">Overs</div>
+                    <div className="font-bold text-slate-800">{match.stats.overs}</div>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-2">
+                    <div className="text-slate-500 mb-1">Run Rate</div>
+                    <div className="font-bold text-slate-800">{match.stats.runRate}</div>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-2">
+                    <div className="text-slate-500 mb-1">Wickets</div>
+                    <div className="font-bold text-slate-800">{match.stats.wickets}</div>
+                  </div>
+                </div>
+
+                {/* Odds */}
+                <div className="grid grid-cols-3 gap-3">
+                  {['home', 'draw', 'away'].map((type) => {
+                    const change = getOddsChangeIcon(match.oddsChange[type]);
+                    return (
+                      <button
+                        key={type}
+                        className="odds-button bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl p-3 text-center group transition-all"
+                      >
+                        <div className="text-xs text-slate-500 mb-1 group-hover:text-emerald-600 uppercase">{type === 'home' ? '1' : type === 'draw' ? 'X' : '2'}</div>
+                        <div className="font-bold text-slate-800 text-lg group-hover:text-emerald-700">{match.odds[type] === 0 ? '-' : match.odds[type].toFixed(2)}</div>
+                        {change && (
+                          <div className={`text-xs mt-1 ${change.color}`}>
+                            {change.symbol} {Math.abs((Math.random() * 0.2).toFixed(2))}
+                          </div>
+                        )}
                       </button>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <button className="odds-btn px-4 py-2 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-lg font-bold text-slate-800 hover:text-blue-700 transition-all">
-                      {event.odds2}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="text-sm font-bold text-slate-800">{event.volume}</div>
-                    <div className={`text-xs ${event.volumeLabel === 'High volume' || event.volumeLabel === 'Active' || event.volumeLabel === 'Trending' || event.volumeLabel === 'Hot' ? 'text-emerald-600' : 'text-slate-500'}`}>
-                      {event.volumeLabel}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-       {/* Upcoming Highlights & Stats */}
-       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-         {/* Upcoming Highlights */}
-         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:col-span-1">
-           <div className="flex items-center justify-between mb-6">
-             <h4 className="font-bold text-slate-800 text-lg">Upcoming Highlights</h4>
-             <button className="text-sm text-rose-600 hover:text-rose-700 font-medium">Full Schedule</button>
-           </div>
-           <div className="space-y-4">
-              {filteredHighlights.map((highlight, index) => (
-               <div
-                 key={index}
-                 className={`flex items-center gap-4 p-4 bg-gradient-to-r rounded-xl border transition-all hover:shadow-md ${getHighlightColor(highlight.color)}`}
-               >
-                 <div className="flex-shrink-0">
-                   <div className={`w-14 h-14 bg-${highlight.color}-500 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg`}>
-                     {highlight.icon}
-                   </div>
-                 </div>
-                 <div className="flex-1">
-                   <div className="flex items-center gap-2 mb-1">
-                     <span className="country-flag text-xl">{highlight.flag}</span>
-                     <span className="font-bold text-slate-800">{highlight.event}</span>
-                   </div>
-                   <div className="text-sm text-slate-600 mb-2">{highlight.league}</div>
-                   <div className="flex items-center gap-2">
-                     <span className="stat-pill px-2 py-1 bg-white rounded text-xs font-medium text-slate-600">{highlight.volume}</span>
-                     <span className={`stat-pill px-2 py-1 bg-white rounded text-xs font-medium ${highlight.interest.includes('+') ? 'text-emerald-600' : 'text-amber-600'}`}>
-                       {highlight.interest}
-                     </span>
-                   </div>
-                 </div>
-                 <button className={`px-4 py-2 bg-${highlight.color}-600 hover:bg-${highlight.color}-700 text-white font-semibold rounded-lg transition-colors`}>
-                   Pre-match
-                 </button>
-               </div>
-             ))}
-           </div>
-         </div>
+      {/* Upcoming Matches */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold text-slate-800">Upcoming Fixtures</h3>
+          <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1">
+            View Calendar
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
 
-         {/* Predictions */}
-         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:col-span-1">
-           <h4 className="font-bold text-slate-800 text-lg mb-6">Predictions</h4>
-           <div className="space-y-4">
-             {/* Mock prediction data */}
-             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-               <div className="flex items-center space-x-3">
-                 <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                   1
-                 </div>
-                 <div>
-                   <p className="font-medium text-slate-800">Match Prediction</p>
-                   <p className="text-sm text-slate-500">Team A vs Team B</p>
-                 </div>
-               </div>
-               <div className="text-right space-x-2">
-                 <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                   65% Win
-                 </span>
-               </div>
-             </div>
-             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-               <div className="flex items-center space-x-3">
-                 <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                   2
-                 </div>
-                 <div>
-                   <p className="font-medium text-slate-800">Match Prediction</p>
-                   <p className="text-sm text-slate-500">Team C vs Team D</p>
-                 </div>
-               </div>
-               <div className="text-right space-x-2">
-                 <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                   72% Win
-                 </span>
-               </div>
-             </div>
-           </div>
-         </div>
-       </div>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Time</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">League</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Match</th>
+                  <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">1</th>
+                  <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">X</th>
+                  <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">2</th>
+                  <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Volume</th>
+                  <th className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {upcomingMatches.map((match, index) => (
+                  <tr key={index} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-slate-800">{match.time}</div>
+                      <div className="text-xs text-slate-500">{match.date}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 bg-${match.leagueColor}-100 text-${match.leagueColor}-700 text-xs font-bold rounded`}>
+                        {match.league}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex -space-x-2">
+                          <div className={`w-8 h-8 ${match.homeColor} rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white`}>
+                            {match.home.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div className={`w-8 h-8 ${match.awayColor} rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white`}>
+                            {match.away.substring(0, 2).toUpperCase()}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-slate-800">{match.home} vs {match.away}</div>
+                          <div className="text-xs text-slate-500">{match.competition}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button className="odds-button px-4 py-2 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg font-bold text-slate-800 hover:text-emerald-700 transition-all">
+                        {match.odds.home === 0 ? '-' : match.odds.home.toFixed(2)}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button className="odds-button px-4 py-2 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg font-bold text-slate-800 hover:text-emerald-700 transition-all">
+                        {match.odds.draw === 0 ? '-' : match.odds.draw.toFixed(2)}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button className="odds-button px-4 py-2 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg font-bold text-slate-800 hover:text-emerald-700 transition-all">
+                        {match.odds.away === 0 ? '-' : match.odds.away.toFixed(2)}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="text-sm font-bold text-slate-800">{match.volume}</div>
+                      <div className={`text-xs ${match.interest === 'Normal' ? 'text-slate-500' : 'text-emerald-600'}`}>
+                        {match.interest}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button className="text-emerald-600 hover:text-emerald-700 font-medium text-sm">More Markets</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Betting Volume Chart */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="font-bold text-lg text-slate-800">Cricket Betting Volume</h3>
+            <p className="text-sm text-slate-500">Hourly distribution across top leagues</p>
+          </div>
+          <div className="flex gap-2">
+            <button className="px-3 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-lg">Today</button>
+            <button className="px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Week</button>
+            <button className="px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Month</button>
+          </div>
+        </div>
+        <div className="h-64">
+          <Line ref={chartRef} data={chartData} options={chartOptions} />
+        </div>
+      </div>
+
+      {/* Top Leagues Performance */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <h4 className="font-bold text-slate-800 mb-4">League Performance</h4>
+          <div className="space-y-4">
+            {leaguePerformance.map((league, index) => (
+              <div key={index}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-medium text-slate-700">{league.name}</span>
+                  <span className={`font-bold ${league.change.startsWith('+') ? 'text-emerald-600' : 'text-red-500'}`}>
+                    {league.change}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-2">
+                  <div className={`stat-bar ${league.color} h-2 rounded-full`} style={{ width: league.width }}></div>
+                </div>
+                <div className="text-xs text-slate-500 mt-1">{league.volume} volume</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-bold text-slate-800">Popular Markets</h4>
+            <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View All</button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {popularMarkets.map((market, index) => (
+              <div
+                key={index}
+                className="p-4 bg-slate-50 rounded-xl text-center hover:bg-emerald-50 transition-colors cursor-pointer border border-slate-200 hover:border-emerald-300"
+              >
+                <div className="text-2xl mb-2">{market.icon}</div>
+                <div className="font-semibold text-slate-800 text-sm">{market.name}</div>
+                <div className="text-xs text-slate-500 mt-1">{market.percentage}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h5 className="font-bold text-slate-800 mb-1">Featured Match</h5>
+                <p className="text-sm text-slate-600">IND vs PAK • Asia Cup • Tomorrow 15:30</p>
+              </div>
+              <button className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors">
+                Pre-match Odds
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Footer */}
       <footer className="text-center text-slate-400 text-sm py-6">
