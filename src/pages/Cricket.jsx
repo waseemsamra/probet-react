@@ -25,7 +25,7 @@ ChartJS.register(
   Filler
 );
 
-function AllSports() {
+function Cricket() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeFilter, setActiveFilter] = useState('all');
    const [selectedSport, setSelectedSport] = useState('cricket');
