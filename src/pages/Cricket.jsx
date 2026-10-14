@@ -524,6 +524,7 @@ function AllSports() {
              </div>
            </div>
          </div>
+       </div>
 
       {/* Footer */}
       <footer className="text-center text-slate-400 text-sm py-6">
