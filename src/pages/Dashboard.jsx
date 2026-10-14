@@ -11,6 +11,8 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
+import { useAuth } from '../contexts/AuthContext';
+import { getNextToGo, getLiveOdds } from '../lib/puntersEdge';
 
 // Register ChartJS components
 ChartJS.register(
@@ -25,13 +27,44 @@ ChartJS.register(
 );
 
 function Dashboard() {
+  const { profile } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
   const chartRef = useRef(null);
+  const [nextRaces, setNextRaces] = useState([])
+  const [loadingRaces, setLoadingRaces] = useState(true)
+  const [raceError, setRaceError] = useState(null)
+
+  const userName = profile?.full_name || profile?.username || 'User';
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Fetch live races
+  useEffect(() => {
+    let mounted = true
+    async function loadRaces() {
+      try {
+        setLoadingRaces(true)
+        const data = await getNextToGo({ numRaces: 10, country: 'AU' })
+        if (mounted) {
+          setNextRaces(data.races || data.data || data)
+          setRaceError(null)
+        }
+      } catch (err) {
+        if (mounted) {
+          setRaceError(err.message)
+          console.error('Failed to load races:', err)
+        }
+      } finally {
+        if (mounted) setLoadingRaces(false)
+      }
+    }
+    loadRaces()
+    const interval = setInterval(loadRaces, 60000) // refresh every minute
+    return () => { mounted = false; clearInterval(interval) }
+  }, [])
 
   // Chart data
   const chartData = {
@@ -162,7 +195,7 @@ function Dashboard() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Dashboard Overview</h2>
-          <p className="text-sm text-slate-500">Welcome back, Alex!</p>
+          <p className="text-sm text-slate-500">Welcome back, {userName}!</p>
         </div>
         <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full flex items-center gap-1">
           <span className="w-2 h-2 bg-emerald-500 rounded-full live-indicator"></span>
@@ -247,7 +280,7 @@ function Dashboard() {
 
       {/* Betting Categories Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* Horse Racing */}
+        {/* Horse Racing - Live from PuntersEdge */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sport-card">
           <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-white">
             <div className="flex items-center justify-between mb-4">
@@ -262,34 +295,64 @@ function Dashboard() {
               </div>
               <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full animate-pulse">LIVE</span>
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:border-emerald-300 transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🐎</span>
-                  <div>
-                    <p className="font-semibold text-slate-800">Royal Ascot - Gold Cup</p>
-                    <p className="text-xs text-slate-500">14:30 GMT • 3m 2f</p>
+            {loadingRaces ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-slate-200 rounded-full"></div>
+                      <div className="w-32 h-4 bg-slate-200 rounded"></div>
+                    </div>
+                    <div className="w-16 h-8 bg-slate-200 rounded"></div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-emerald-600">2.75</p>
-                  <p className="text-xs text-emerald-600">▼ 0.25</p>
-                </div>
+                ))}
               </div>
-              <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:border-emerald-300 transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🏇</span>
-                  <div>
-                    <p className="font-semibold text-slate-800">Kentucky Derby</p>
-                    <p className="text-xs text-slate-500">18:45 EST • 1m ¼f</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-slate-800">4.20</p>
-                  <p className="text-xs text-emerald-600">▲ 0.15</p>
-                </div>
+            ) : raceError ? (
+              <div className="p-3 text-center text-red-600 text-sm">Failed to load: {raceError}</div>
+            ) : nextRaces.length === 0 ? (
+              <div className="p-3 text-center text-slate-500 text-sm">No upcoming races</div>
+            ) : (
+              <div className="space-y-3">
+                {nextRaces.slice(0, 3).map((race) => {
+                  // Find the favorite (lowest win price)
+                  const favorite = race.runners?.reduce((best, runner) => {
+                    const bestPrice = runner.bookmakers?.reduce((lowest, bm) => 
+                      (bm.win_price && (!lowest || bm.win_price < lowest)) ? bm.win_price : lowest, null)
+                    const currentBest = best?.bookmakers?.reduce((lowest, bm) => 
+                      (bm.win_price && (!lowest || bm.win_price < lowest)) ? bm.win_price : lowest, null)
+                    return (bestPrice && (!currentBest || bestPrice < currentBest)) ? runner : best
+                  }, null)
+                  
+                  const favPrice = favorite?.bookmakers?.reduce((lowest, bm) => 
+                    (bm.win_price && (!lowest || bm.win_price < lowest)) ? bm.win_price : lowest, null)
+                  
+                  // Format start time
+                  const startTime = race.start_time ? new Date(race.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
+                  
+                  return (
+                    <div key={race.race_id || race.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:border-emerald-300 transition-colors cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">🐎</span>
+                        <div>
+                          <p className="font-semibold text-slate-800">{race.venue} • Race {race.race_number}</p>
+                          <p className="text-xs text-slate-500">
+                            {startTime} • {race.distance_m ? `${race.distance_m}m` : ''} • {race.category}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-emerald-600">
+                          {favPrice ? `${favPrice.toFixed(1)}` : '-'}
+                        </p>
+                        <p className="text-xs text-emerald-600">
+                          Fav: {favorite?.name || '-'}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
-            </div>
+            )}
             <button className="w-full mt-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
               View All Races
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>

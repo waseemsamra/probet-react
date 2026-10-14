@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabaseClient'
 
 const PROVIDERS = ['github', 'google', 'apple']
@@ -10,6 +11,7 @@ export default function Login() {
   const [error, setError] = useState(null)
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
 
   if (!supabase) {
     return (
@@ -64,6 +66,7 @@ export default function Login() {
         if (err) throw err
         // If signup with email confirmations enabled, a magic-link email is sent.
         if (mode === 'signup') setSent(true)
+        else if (mode === 'signin') navigate('/', { replace: true })
       }
     } catch (err) {
       setError(err.message ?? 'Something went wrong')

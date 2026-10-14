@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
+import { getNextToGo } from '../lib/puntersEdge';
 
 function HorseRacing() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [countdown, setCountdown] = useState(154);
   const [selectedBet, setSelectedBet] = useState({ horse: 'Stradivarius', odds: 2.75, stake: 50 });
   const [slipCount, setSlipCount] = useState(1);
+  const [races, setRaces] = useState([])
+  const [selectedRaceId, setSelectedRaceId] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [selectedCountry, setSelectedCountry] = useState('GB')
 
   // Clock
   useEffect(() => {
@@ -20,30 +26,59 @@ function HorseRacing() {
     return () => clearInterval(interval);
   }, []);
 
-  // Live odds fluctuation
-  const [odds, setOdds] = useState({
-    stradivarius: 2.75,
-    kyprios: 3.50,
-    tasso: 8.00,
-    coltrane: 12.00,
-    princessZoe: 15.00,
-  });
-
+  // Fetch live races
   useEffect(() => {
+    let mounted = true
+    async function loadRaces() {
+      try {
+        setLoading(true)
+        const data = await getNextToGo({ numRaces: 20, country: selectedCountry, category: 'horse' })
+        if (mounted) {
+          setRaces(data)
+          if (data.length > 0 && !selectedRaceId) {
+            setSelectedRaceId(data[0].race_id)
+          }
+        }
+      } catch (err) {
+        if (mounted) setError(err.message)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    loadRaces()
+    const interval = setInterval(loadRaces, 60000)
+    return () => { mounted = false; clearInterval(interval) }
+  }, [selectedCountry])
+
+  const selectedRace = races.find(r => r.race_id === selectedRaceId)
+
+  // Live odds fluctuation for selected race
+  const [liveOdds, setLiveOdds] = useState({})
+  useEffect(() => {
+    if (!selectedRace) return
+    // Initialize odds from API
+    const initialOdds = {}
+    selectedRace.runners?.forEach(runner => {
+      const bestPrice = runner.bookmakers?.reduce((lowest, bm) => 
+        (bm.win_price && (!lowest || bm.win_price < lowest)) ? bm.win_price : lowest, null)
+      if (bestPrice) initialOdds[runner.name] = bestPrice
+    })
+    setLiveOdds(initialOdds)
+
     const interval = setInterval(() => {
-      setOdds((prev) => {
+      setLiveOdds((prev) => {
         const newOdds = { ...prev };
         Object.keys(newOdds).forEach((key) => {
           if (Math.random() > 0.7) {
             const change = (Math.random() - 0.5) * 0.2;
-            newOdds[key] = Math.max(1.01, prev[key] + change);
+            newOdds[key] = Math.max(1.01, Math.round((prev[key] + change) * 10) / 10);
           }
         });
         return newOdds;
       });
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedRace])
 
   const formatCountdown = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -53,92 +88,34 @@ function HorseRacing() {
 
   const calculateReturn = (stake, odd) => (stake * odd).toFixed(2);
 
-  const runners = [
-    {
-      id: 1,
-      number: 1,
-      name: 'Stradivarius',
+  const runners = selectedRace?.runners?.map(runner => {
+    const bestPrice = runner.bookmakers?.reduce((lowest, bm) => 
+      (bm.win_price && (!lowest || bm.win_price < lowest)) ? bm.win_price : lowest, null)
+    return {
+      id: runner.number,
+      number: runner.number,
+      name: runner.name,
       country: '',
-      age: 8,
-      weight: '9-9',
-      jockey: 'Frankie Dettori',
-      trainer: 'John Gosden',
-      form: ['1', '1', '1', '2', '1', '1'],
-      odds: odds.stradivarius,
-      isNap: true,
-      isFav: true,
-      color: 'from-red-600 to-red-800',
-    },
-    {
-      id: 2,
-      number: 2,
-      name: 'Kyprios',
-      country: '(IRE)',
-      age: 5,
-      weight: '9-7',
-      jockey: 'Ryan Moore',
-      trainer: 'Aidan O\'Brien',
-      form: ['1', '1', '2', '1', '0', '1'],
-      odds: odds.kyprios,
+      age: '',
+      weight: '',
+      jockey: runner.jockey || '',
+      trainer: runner.trainer || '',
+      form: runner.form || '',
+      odds: liveOdds[runner.name] || bestPrice || 0,
       isNap: false,
       isFav: false,
-      color: 'from-blue-500 to-blue-700',
-    },
-    {
-      id: 3,
-      number: 3,
-      name: 'Torquator Tasso',
-      country: '(GER)',
-      age: 6,
-      weight: '9-6',
-      jockey: 'Rene Piechulek',
-      trainer: 'Marcel Weiss',
-      form: ['2', '1', '0', '2', '1', '2'],
-      odds: odds.tasso,
-      isNap: false,
-      isFav: false,
-      color: 'from-purple-500 to-purple-700',
-    },
-    {
-      id: 4,
-      number: 4,
-      name: 'Coltrane',
-      country: '(IRE)',
-      age: 6,
-      weight: '9-4',
-      jockey: 'Oisin Murphy',
-      trainer: 'Andrew Balding',
-      form: ['1', '2', '2', '1', '2', '0'],
-      odds: odds.coltrane,
-      isNap: false,
-      isFav: false,
-      color: 'from-amber-500 to-amber-700',
-    },
-    {
-      id: 5,
-      number: 5,
-      name: 'Princess Zoe',
-      country: '(IRE)',
-      age: 7,
-      weight: '9-2',
-      jockey: 'Joey Sheridan',
-      trainer: 'Tony Mullins',
-      form: ['1', '1', '2', '1', '1', '2'],
-      odds: odds.princessZoe,
-      isNap: false,
-      isFav: false,
-      isFilly: true,
-      color: 'from-rose-500 to-rose-700',
-    },
-  ];
+      color: 'from-emerald-500 to-emerald-700',
+    }
+  }) || []
 
-  const upcomingRaces = [
-    { time: '14:50', track: 'Cheltenham', name: 'Novices\' Hurdle', distance: '2m ½f', runners: 8, sp: '3/1', countdown: '18m' },
-    { time: '15:05', track: 'Newmarket', name: 'Guineas Trial', distance: '1m • Group 3', runners: 12, sp: '5/2', countdown: '33m' },
-    { time: '15:30', track: 'Kentucky', name: 'Kentucky Derby', distance: '1m ¼f • Grade 1', runners: 20, sp: 'Fav', countdown: '58m', major: true },
-    { time: '15:45', track: 'Curragh', name: 'Irish 2000 Guineas', distance: '1m • Group 1', runners: 10, sp: '7/4', countdown: '73m' },
-    { time: '16:00', track: 'Sha Tin', name: 'Champions Mile', distance: '1m • Group 1', runners: 14, sp: 'HK$18M', countdown: '88m' },
-  ];
+  const countries = [
+    { code: 'GB', name: 'UK', flag: '🇬🇧' },
+    { code: 'IE', name: 'Ireland', flag: '🇮🇪' },
+    { code: 'AU', name: 'Australia', flag: '🇦🇺' },
+    { code: 'US', name: 'USA', flag: '🇺🇸' },
+    { code: 'NZ', name: 'NZ', flag: '🇳🇿' },
+    { code: 'ZA', name: 'SA', flag: '🇿🇦' },
+  ]
 
   const getFormColor = (form) => {
     if (form === '1') return 'bg-emerald-500 text-white';
@@ -204,17 +181,35 @@ function HorseRacing() {
 
         {/* Track Filter Tabs */}
         <div className="flex items-center gap-2 mt-4 overflow-x-auto">
+          {/* Country Selector */}
+          <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-1">
+            {countries.map(c => (
+              <button
+                key={c.code}
+                onClick={() => setSelectedCountry(c.code)}
+                className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+                  selectedCountry === c.code
+                    ? 'bg-emerald-600 text-white'
+                    : 'text-slate-600 hover:bg-emerald-50'
+                }`}
+              >
+                {c.flag} {c.name}
+              </button>
+            ))}
+          </div>
+          <div className="h-8 w-px bg-slate-200"></div>
           <button className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium text-sm shadow-md">All Tracks</button>
-          <button className="px-4 py-2 bg-white text-slate-600 hover:bg-emerald-50 border border-slate-200 rounded-lg font-medium text-sm transition-colors flex items-center gap-2">
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-            Ascot
-            <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">LIVE</span>
-          </button>
-          <button className="px-4 py-2 bg-white text-slate-600 hover:bg-emerald-50 border border-slate-200 rounded-lg font-medium text-sm transition-colors">Cheltenham</button>
-          <button className="px-4 py-2 bg-white text-slate-600 hover:bg-emerald-50 border border-slate-200 rounded-lg font-medium text-sm transition-colors">Newmarket</button>
-          <button className="px-4 py-2 bg-white text-slate-600 hover:bg-emerald-50 border border-slate-200 rounded-lg font-medium text-sm transition-colors">Curragh</button>
-          <button className="px-4 py-2 bg-white text-slate-600 hover:bg-emerald-50 border border-slate-200 rounded-lg font-medium text-sm transition-colors">Kentucky Downs</button>
-          <button className="px-4 py-2 bg-white text-slate-600 hover:bg-emerald-50 border border-slate-200 rounded-lg font-medium text-sm transition-colors">Sha Tin</button>
+          {races.slice(0, 6).map(race => (
+            <button
+              key={race.race_id}
+              onClick={() => setSelectedRaceId(race.race_id)}
+              className={`px-4 py-2 text-slate-600 hover:bg-emerald-50 border border-slate-200 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
+                selectedRaceId === race.race_id ? 'bg-emerald-50 border-emerald-300' : ''
+              }`}
+            >
+              {race.venue} R{race.race_number}
+            </button>
+          ))}
         </div>
       </header>
 
@@ -247,25 +242,52 @@ function HorseRacing() {
 
           {/* Upcoming Races */}
           <div className="divide-y divide-slate-100">
-            {upcomingRaces.map((race, index) => (
-              <div key={index} className="p-4 hover:bg-slate-50 cursor-pointer transition-colors group">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-bold text-slate-800 group-hover:text-emerald-600 transition-colors">
-                    {race.time} {race.track}
-                  </span>
-                  <span className="text-xs text-slate-500 font-mono">{race.countdown}</span>
-                </div>
-                <p className="text-xs text-slate-500 mb-2">{race.name} • {race.distance}</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">{race.runners} Runners</span>
-                  {race.major ? (
-                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold">MAJOR</span>
-                  ) : (
-                    <span className="text-xs text-amber-600 font-medium">{race.sp}</span>
-                  )}
-                </div>
-              </div>
-            ))}
+            {loading ? (
+              <div className="p-4 text-center text-slate-500">Loading races...</div>
+            ) : error ? (
+              <div className="p-4 text-center text-red-600">Error: {error}</div>
+            ) : (
+              races.map((race, index) => {
+                const isSelected = selectedRaceId === race.race_id
+                const startTime = race.start_time ? new Date(race.start_time) : null
+                const timeStr = startTime ? startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'TBD'
+                const countdownSecs = startTime ? Math.max(0, Math.floor((startTime - new Date()) / 1000)) : 0
+                const countdownStr = countdownSecs > 0 
+                  ? `${Math.floor(countdownSecs / 60)}m` 
+                  : 'OFF'
+                const isLive = countdownSecs <= 0 && countdownSecs > -3600 // started within last hour
+                
+                return (
+                  <div
+                    key={race.race_id}
+                    onClick={() => setSelectedRaceId(race.race_id)}
+                    className={`p-4 cursor-pointer transition-colors ${
+                      isSelected ? 'bg-emerald-50 border-l-4 border-emerald-500' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-sm font-bold ${isSelected ? 'text-emerald-600' : 'text-slate-800'} group-hover:text-emerald-600 transition-colors`}>
+                        {timeStr} {race.venue}
+                      </span>
+                      <span className={`text-xs font-mono ${isLive ? 'text-red-600 animate-pulse' : 'text-slate-500'}`}>
+                        {isLive ? 'LIVE' : countdownStr}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-2">Race {race.race_number} • {race.distance_m ? `${race.distance_m}m` : 'TBD'}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">{race.runners?.length || 0} Runners</span>
+                      {isLive ? (
+                        <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-bold animate-pulse">LIVE</span>
+                      ) : (
+                        <span className="text-xs text-amber-600 font-medium">
+                          Fav: {race.runners?.[0]?.name || '-'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </div>
 
           {/* Ante-Post Section */}
@@ -295,23 +317,44 @@ function HorseRacing() {
 
         {/* Race Detail View */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Race Header */}
+          {/* Race Header - Live Data */}
           <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white p-6">
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="px-3 py-1 bg-white/20 backdrop-blur rounded-full text-xs font-bold">GROUP 1</span>
-                  <span className="px-3 py-1 bg-red-500/80 backdrop-blur rounded-full text-xs font-bold flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
-                    LIVE
+                  <span className="px-3 py-1 bg-white/20 backdrop-blur rounded-full text-xs font-bold">
+                    {selectedRace?.race_class || 'RACE'}
                   </span>
+                  {selectedRace && (selectedRace.inplay_at || selectedRace.market_state_source) && (
+                    <span className="px-3 py-1 bg-red-500/80 backdrop-blur rounded-full text-xs font-bold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                      LIVE
+                    </span>
+                  )}
                 </div>
-                <h1 className="text-3xl font-bold mb-2">Ascot Gold Cup</h1>
-                <p className="text-emerald-100 text-sm">British Champions Series • 2 miles 4 furlongs • 4yo+ • Good to Firm</p>
+                <h1 className="text-3xl font-bold mb-2">
+                  {selectedRace?.venue || 'Ascot'} - Race {selectedRace?.race_number || '1'}
+                </h1>
+                <p className="text-emerald-100 text-sm">
+                  {selectedRace?.distance_m ? `${selectedRace.distance_m}m` : 'TBD'} • {selectedRace?.category || 'horse'} • {selectedRace?.track_condition || 'Good'}
+                </p>
               </div>
               <div className="text-right">
-                <div className="text-4xl font-bold font-mono mb-1">{formatCountdown(countdown)}</div>
-                <p className="text-emerald-200 text-sm">to finish</p>
+                <div className="text-4xl font-bold font-mono mb-1">
+                  {selectedRace ? (() => {
+                    const startTime = new Date(selectedRace.start_time)
+                    const diff = startTime - new Date()
+                    if (diff > 0) {
+                      const mins = Math.floor(diff / 60000)
+                      const secs = Math.floor((diff % 60000) / 1000)
+                      return `${mins}:${secs.toString().padStart(2, '0')}`
+                    }
+                    return 'LIVE'
+                  })() : 'TBD'}
+                </div>
+                <p className="text-emerald-200 text-sm">
+                  {selectedRace && new Date(selectedRace.start_time) < new Date() ? 'in progress' : 'to start'}
+                </p>
               </div>
             </div>
 
@@ -319,16 +362,16 @@ function HorseRacing() {
             <div className="flex items-center gap-8 mt-6 pt-6 border-t border-white/20 text-sm">
               <div>
                 <p className="text-emerald-200 text-xs mb-1">Prize Pool</p>
-                <p className="font-bold text-lg">£500,000</p>
+                <p className="font-bold text-lg">{selectedRace?.prize_total ? `£${selectedRace.prize_total.toLocaleString()}` : 'TBD'}</p>
               </div>
               <div>
                 <p className="text-emerald-200 text-xs mb-1">Runners</p>
-                <p className="font-bold text-lg">14</p>
+                <p className="font-bold text-lg">{selectedRace?.runners?.length || 0}</p>
               </div>
               <div>
                 <p className="text-emerald-200 text-xs mb-1">Going</p>
                 <p className="font-bold text-lg flex items-center gap-2">
-                  Good to Firm
+                  {selectedRace?.track_condition || 'Good to Firm'}
                   <span className="w-3 h-3 bg-emerald-400 rounded-full"></span>
                 </p>
               </div>
@@ -338,55 +381,59 @@ function HorseRacing() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
-                  18°C Sunny
+                  {selectedRace?.weather || '18°C Sunny'}
                 </p>
               </div>
               <div>
                 <p className="text-emerald-200 text-xs mb-1">Stalls</p>
-                <p className="font-bold text-lg">Centre</p>
+                <p className="font-bold text-lg">{selectedRace?.rail || 'Centre'}</p>
               </div>
             </div>
           </div>
 
           {/* Runners & Betting */}
           <div className="flex-1 overflow-y-auto p-6">
-            {/* NAP Selection */}
-            <div className="bg-gradient-to-r from-red-50 to-amber-50 rounded-xl p-4 mb-6 flex items-center justify-between border-l-4 border-red-600">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white font-bold text-lg shadow-md">1</div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-800 text-lg">Stradivarius</span>
-                    <span className="px-2 py-0.5 bg-red-600 text-white text-xs rounded font-bold">NAP</span>
-                    <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded font-bold">FAV</span>
-                  </div>
-                  <p className="text-sm text-slate-600">Age: 8 • Weight: 9-9 • Jockey: Frankie Dettori • Trainer: John Gosden</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <p className="text-xs text-slate-500 mb-1">Form</p>
-                  <div className="flex">
-                    {runners[0].form.map((f, i) => (
-                      <span key={i} className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold mr-1 ${getFormColor(f)}`}>{f}</span>
-                    ))}
+            {/* NAP Selection - Favorite Runner */}
+            {runners.length > 0 && (
+              <div className="bg-gradient-to-r from-red-50 to-amber-50 rounded-xl p-4 mb-6 flex items-center justify-between border-l-4 border-red-600">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white font-bold text-lg shadow-md">{runners[0].number}</div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-800 text-lg">{runners[0].name}</span>
+                      <span className="px-2 py-0.5 bg-red-600 text-white text-xs rounded font-bold">NAP</span>
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded font-bold">FAV</span>
+                    </div>
+                    <p className="text-sm text-slate-600">
+                      Jockey: {runners[0].jockey || '-'} • Trainer: {runners[0].trainer || '-'}
+                    </p>
                   </div>
                 </div>
-                <div className="bg-gradient-to-r from-amber-100 to-amber-200 px-4 py-2 rounded-lg text-center border-2 border-amber-500">
-                  <p className="text-2xl font-bold text-amber-800 font-mono">{odds.stradivarius.toFixed(2)}</p>
-                  <p className="text-xs text-amber-700 font-medium">1/4 1-2-3</p>
+                <div className="flex items-center gap-4">
+                  <div className="text-center">
+                    <p className="text-xs text-slate-500 mb-1">Form</p>
+                    <div className="flex">
+                      {(runners[0]?.form || '').split('').map((f, i) => (
+                        <span key={i} className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold mr-1 ${getFormColor(f)}`}>{f}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-amber-100 to-amber-200 px-4 py-2 rounded-lg text-center border-2 border-amber-500">
+                    <p className="text-2xl font-bold text-amber-800 font-mono">{runners[0]?.odds?.toFixed(2) || '-'}</p>
+                    <p className="text-xs text-amber-700 font-medium">1/4 1-2-3</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedBet({ horse: runners[0]?.name || '', odds: runners[0]?.odds || 0, stake: 50 });
+                      setSlipCount(1);
+                    }}
+                    className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-lg transition-all hover:scale-105 active:scale-95"
+                  >
+                    Add to Bet
+                  </button>
                 </div>
-                <button
-                  onClick={() => {
-                    setSelectedBet({ horse: 'Stradivarius', odds: odds.stradivarius, stake: 50 });
-                    setSlipCount(1);
-                  }}
-                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-lg transition-all hover:scale-105 active:scale-95"
-                >
-                  Add to Bet
-                </button>
               </div>
-            </div>
+            )}
 
             {/* Runners Grid */}
             <div className="space-y-3">
@@ -408,7 +455,7 @@ function HorseRacing() {
                         )}
                       </div>
                       <p className="text-sm text-slate-600">
-                        Age: {runner.age} • Weight: {runner.weight} • Jockey: {runner.jockey} • Trainer: {runner.trainer}
+                        Age: {runner.age || '-'} • Weight: {runner.weight || '-'} • Jockey: {runner.jockey || '-'} • Trainer: {runner.trainer || '-'}
                       </p>
                     </div>
                   </div>
@@ -416,7 +463,7 @@ function HorseRacing() {
                     <div className="text-center">
                       <p className="text-xs text-slate-500 mb-1">Form</p>
                       <div className="flex">
-                        {runner.form.map((f, i) => (
+                        {(runner.form || '').split('').map((f, i) => (
                           <span key={i} className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold mr-1 ${getFormColor(f)}`}>{f}</span>
                         ))}
                       </div>
