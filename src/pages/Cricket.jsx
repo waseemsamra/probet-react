@@ -51,6 +51,59 @@ function Cricket() {
     return () => clearInterval(interval);
   }, [autoRefresh]);
 
+   // Enhanced live match updates - simulate realistic cricket progression
+   useEffect(() => {
+     if (!autoRefresh) return;
+
+     const interval = setInterval(() => {
+       // Update match timers
+       setMatch1Time(prev => prev + 1);
+       setMatch2Time(prev => prev + 1);
+       
+       // Update match 1 (IPL) scores and stats periodically
+       if (Math.random() < 0.2) { // 20% chance each second
+         setScore1(prev => {
+           const homeIncrement = Math.floor(Math.random() * 8); // 0-7 runs
+           const awayIncrement = Math.floor(Math.random() * 8); // 0-7 runs
+           const homeWicket = Math.random() < 0.1; // 10% chance of wicket
+           const awayWicket = Math.random() < 0.1; // 10% chance of wicket
+           
+           return {
+             home: prev.home + homeIncrement,
+             away: prev.away + awayIncrement
+           };
+         });
+         
+         // Update match 1 odds based on score changes
+         setTimeout(() => {
+           // Simulate odds movement - home team doing well lowers their odds
+           // This is simplified - real odds calculation is more complex
+         }, 50);
+       }
+       
+       // Update match 2 (International) scores and stats periodically
+       if (Math.random() < 0.15) { // 15% chance each second (slightly less active)
+         setScore2(prev => {
+           const homeIncrement = Math.floor(Math.random() * 6); // 0-5 runs
+           const awayIncrement = Math.floor(Math.random() * 6); // 0-5 runs
+           
+           return {
+             home: prev.home + homeIncrement,
+             away: prev.away + awayIncrement
+           };
+         });
+       }
+       
+       // Occasionally update match status/period
+       if (Math.random() < 0.05) { // 5% chance each second
+         // In a real app, we'd update period, stats, etc. based on actual match progression
+       }
+     }, 1000);
+
+     return () => clearInterval(interval);
+   }, [autoRefresh]);
+
+
   // Format time
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -448,7 +501,7 @@ function Cricket() {
         </div>
 
         {/* Live Match Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="overflow-x-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
           {liveMatches.map((match) => (
             <div key={match.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden match-card hover:shadow-lg transition-all">
               <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-3 flex items-center justify-between text-white">
@@ -630,7 +683,7 @@ function Cricket() {
       </div>
 
       {/* Top Leagues Performance */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="overflow-x-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
           <h4 className="font-bold text-slate-800 mb-4">League Performance</h4>
           <div className="space-y-4">
@@ -656,7 +709,7 @@ function Cricket() {
             <h4 className="font-bold text-slate-800">Popular Markets</h4>
             <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View All</button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="overflow-x-auto grid grid-cols-2 md:grid-cols-4 gap-4">
             {popularMarkets.map((market, index) => (
               <div
                 key={index}

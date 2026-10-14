@@ -474,7 +474,7 @@ function AllSports() {
       </div>
 
       {/* Upcoming Highlights & Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="overflow-x-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Upcoming Highlights */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
           <div className="flex items-center justify-between mb-6">
