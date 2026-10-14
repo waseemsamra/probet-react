@@ -15,24 +15,22 @@ import Cricket from './pages/Cricket';
 import Users from './pages/Users';
 import Reports from './pages/Reports';
 
-// Sidebar Component
-function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
+// Sidebar Content Component
+function SidebarContent() {
   const location = useLocation();
   const { profile, signOut } = useAuth();
   const [horseRacingOpen, setHorseRacingOpen] = useState(false);
-
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  
   const isActive = (path) => location.pathname === path;
-
+  
   const navLinkClass = (path) => `flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors ${
     isActive(path) ? 'bg-slate-50 text-slate-800' : 'text-slate-600 hover:bg-slate-50'
   }`;
 
-  // Detect mobile width
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-
   return (
-    <aside className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-slate-200 flex flex-col z-20 flex-shrink-0 transition-transform duration-300 ease-in-out ${isMobile && !isSidebarOpen ? '-translate-x-full' : 'translate-x-0'}`}>
-      <div className="flex items-center justify-between p-6 border-b border-slate-100">
+    <>
+      <div className="p-6 border-b border-slate-100">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">P</div>
           <div>
@@ -40,20 +38,22 @@ function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
             <p className="text-xs text-slate-500 font-medium">Admin Dashboard</p>
           </div>
         </div>
-        <button onClick={() => setIsSidebarOpen(false)} className="text-slate-500 hover:text-slate-700">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
+        {!isMobile && (
+          <button onClick={() => setIsSidebarOpen(false)} className="text-slate-500 hover:text-slate-700">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
         <div className="mb-6">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-3">Main</p>
           <Link to="/" className={navLinkClass('/')}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2 2v-2z"></path></svg>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
             Dashboard
           </Link>
           <Link to="/analytics" className={navLinkClass('/analytics')}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 002 2h2a2 2 0 002 2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2 2z"></path></svg>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 002-2h2a2 2 0 002-2m0 0V5a2 2 0 002-2h2a2 2 0 002-2z"></path></svg>
             Analytics
           </Link>
         </div>
@@ -136,40 +136,46 @@ function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
           </button>
         </div>
       </div>
-    </aside>
+    </>
   );
 }
 
 // Main Layout Component
 function MainLayout() {
   const location = useLocation();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Start open on desktop
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Detect mobile width
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   
   // Close sidebar when navigating on mobile
   useEffect(() => {
-    // Check if we're on mobile (screen width < 768px)
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    if (isMobile) {
       setIsSidebarOpen(false);
     }
   }, [location.pathname]);
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden">
-      {/* Mobile Hamburger Button */}
-      <div className={`fixed left-0 top-0 z-30 p-4 md:hidden ${isSidebarOpen ? 'translate-x-[256px]' : 'translate-x-0'} transition-transform duration-300`}>
-        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-slate-600 hover:text-slate-800">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
-      </div>
-      
-      {/* Sidebar Overlay for Mobile */}
-      {typeof window !== 'undefined' && window.innerWidth < 768 && isSidebarOpen && (
-        <div className="fixed inset-0 z-20 bg-black bg-opacity-50" onClick={() => setIsSidebarOpen(false)} />
+      {/* Desktop Sidebar (always visible) */}
+      {!isMobile && (
+        <aside className="w-64 bg-white border-r border-slate-200 flex flex-col z-20 shadow-lg flex-shrink-0">
+          <SidebarContent />
+        </aside>
       )}
       
-      <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      
-      <main className={`flex-1 overflow-auto bg-slate-50 ${typeof window !== 'undefined' && window.innerWidth < 768 && isSidebarOpen ? 'translate-x-[256px]' : 'translate-x-0'} transition-transform duration-300`}>
+      {/* Main Content */}
+      <main className={`flex-1 overflow-auto bg-slate-50 ${isMobile && isSidebarOpen ? 'translate-x-[256px]' : 'translate-x-0'} transition-transform duration-300`}>
+        {/* Mobile Hamburger Button */}
+        {isMobile && (
+          <div className="fixed left-0 top-0 z-30 p-4">
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-slate-600 hover:text-slate-800">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+          </div>
+        )}
+        
+        {/* Routes */}
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/analytics" element={<Analytics />} />
@@ -181,6 +187,18 @@ function MainLayout() {
           <Route path="/users" element={<Users />} />
           <Route path="/reports" element={<Reports />} />
         </Routes>
+        
+        {/* Mobile Sidebar Overlay */}
+        {isMobile && (
+          <aside className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-slate-200 flex flex-col z-20 shadow-lg flex-shrink-0 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <SidebarContent />
+          </aside>
+        )}
+        
+        {/* Mobile Backdrop */}
+        {isMobile && isSidebarOpen && (
+          <div className="fixed inset-0 z-20 bg-black bg-opacity-50" onClick={() => setIsSidebarOpen(false)} />
+        )}
       </main>
     </div>
   );
